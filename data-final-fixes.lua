@@ -1185,7 +1185,7 @@ function This_MOD.create_recipe___compact()
         Recipe.icons = util.copy(space.item.icons)
 
         --- Categoria
-        Recipe.category = This_MOD.prefix .. category
+        Recipe.categories = { This_MOD.prefix .. category }
 
         --- Nuevo subgrupo
         Recipe.subgroup =
@@ -1367,7 +1367,7 @@ function This_MOD.create_tech___compact()
 
         if Resource then
             Do_tech.research_trigger.type = "mine-entity"
-            Do_tech.research_trigger.entity = Resource.name
+            Do_tech.research_trigger.entities = { Resource.name }
         end
 
         if not Resource then
