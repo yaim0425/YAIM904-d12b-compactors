@@ -1,9 +1,9 @@
-﻿{
+{
     "name":  "YAIM904-d12b-compactors",
-    "version":  "0.0.3",
+    "version":  "0.0.4",
     "title":  "YAIM904 d12b Compactors",
     "author":  "YAIM904",
-    "factorio_version":  "2.1",
+    "factorio_version":  "2.0",
     "description":  "Compress and decompress objects to facilitate storage and transport. [[I accept suggestions]]",
     "homepage":  "https://github.com/yaim0425/YAIM904-d12b-compactors",
     "dependencies":  [
