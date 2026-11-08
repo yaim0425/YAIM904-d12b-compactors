@@ -28,7 +28,7 @@ function This_MOD.start()
     --- Modificar los elementos
     for _, spaces in pairs(This_MOD.to_be_processed) do
         for _, space in pairs(spaces) do
-            --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+            --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
             -- --- Crear los elementos
             This_MOD.create_item(space)
@@ -36,7 +36,7 @@ function This_MOD.start()
             This_MOD.create_recipe(space)
             This_MOD.create_tech(space)
 
-            --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+            --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
         end
     end
 
@@ -47,9 +47,6 @@ function This_MOD.start()
 
     --- Implementar otros MODs
     if GMOD.d18b then GMOD.d18b.start() end
-
-    --- Fijar las posiciones actual
-    GMOD.d00b.change_orders()
 
     --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 end
@@ -131,7 +128,7 @@ function This_MOD.reference_values()
     This_MOD.entity_name = "compactor"
 
     --- Entidad de referencia
-    This_MOD.furnace = GMOD.entities["electric-furnace"]
+    This_MOD.furnace = GMOD.entity["electric-furnace"]
 
     --- Categorias de fabricación
     This_MOD.category_do = "compressed"
@@ -139,12 +136,12 @@ function This_MOD.reference_values()
 
     --- Nombre de los subgrupo
     This_MOD.new_subgroup = This_MOD.prefix .. This_MOD.name
-    This_MOD.old_subgroup = GMOD.items["splitter"].subgroup
+    This_MOD.old_subgroup = GMOD.item["splitter"].subgroup
 
     --- Puntos de referencia
     This_MOD.item_tech = "transport-belt"
     This_MOD.splitter = "splitter"
-    This_MOD.speed_base = GMOD.entities[This_MOD.item_tech].speed
+    This_MOD.speed_base = GMOD.entity[This_MOD.item_tech].speed
 
     --- Valores a evitar
     This_MOD.ignore_types = { ["armor"] = true }
@@ -245,7 +242,7 @@ function This_MOD.get_elements()
             This_MOD.id .. "-" ..
             Name
 
-        if GMOD.entities[Name] then return end
+        if GMOD.entity[Name] then return end
 
         --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
@@ -260,7 +257,6 @@ function This_MOD.get_elements()
         local Space = {}
         Space.item = item
         Space.entity = entity
-        Space.name = Name
 
         Space.belt = string.gsub(That_MOD.name, This_MOD.splitter, This_MOD.item_tech)
         Space.tech = GMOD.get_technology(GMOD.recipes[Space.belt], true)
@@ -268,6 +264,11 @@ function This_MOD.get_elements()
         Space.recipe = GMOD.recipes[Space.item.name]
         Space.recipe = Space.recipe and Space.recipe[1] or nil
 
+        for key, value in pairs(Space) do
+            Space[key] = GMOD.copy_with_format(value)
+        end
+
+        Space.name = Name
         Space.color = This_MOD.colors[Tier]
 
         Space.localised_name = {
@@ -357,12 +358,13 @@ function This_MOD.get_elements()
 
     --- Entidad que se va a duplicar
     for _, entity in pairs(data.raw.splitter) do
+        entity = GMOD.copy_with_format(entity) or {}
         validate_entity(GMOD.get_item_create(entity, "place_result"), entity)
     end
 
     --- Item a afectar
     This_MOD.items = {}
-    for _, item in pairs(GMOD.items) do
+    for _, item in pairs(GMOD.item) do
         This_MOD.add_item(item)
     end
 
@@ -403,7 +405,7 @@ function This_MOD.add_item(item)
     local Space = {}
 
     --- Guardar el objeto
-    Space.item = item
+    Space.item = GMOD.copy_with_format(item)
 
     --- Calcular la cantidad
     Space.amount = This_MOD.setting.amount
@@ -437,8 +439,8 @@ function This_MOD.add_item(item)
         Amount
 
     --- Validar si ya existe
-    if GMOD.items[Space.item_name] then return end
-    if GMOD.items[Prefix .. "d13b-" .. Amount] then return end
+    if GMOD.item[Space.item_name] then return end
+    if GMOD.item[Prefix .. "d13b-" .. Amount] then return end
 
     --- Nombre de la recetas
     Space.do_name =
@@ -540,7 +542,17 @@ function This_MOD.create_item(space)
     --- Crear el subgrupo para el objeto
     --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
-    GMOD.duplicate_subgroup(This_MOD.old_subgroup, Item.subgroup)
+    --- Duplicar el subgrupo
+    if not GMOD.subgroups[Item.subgroup] then
+        GMOD.duplicate_subgroup(This_MOD.old_subgroup, Item.subgroup)
+
+        --- Renombrar
+        local Subgroup = GMOD.subgroups[Item.subgroup]
+        local oldOrder = GMOD.subgroups[This_MOD.old_subgroup].order or ""
+
+        --- Actualizar el order
+        Subgroup.order = oldOrder .. "-12"
+    end
 
     --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
@@ -650,7 +662,7 @@ function This_MOD.create_entity(space)
             Name
 
         --- La entidad ya existe
-        if GMOD.entities[Name] then return Name end
+        if GMOD.entity[Name] then return Name end
 
         --- La entidad existirá
         for _, Spaces in pairs(This_MOD.to_be_processed) do
@@ -874,7 +886,7 @@ function This_MOD.create_recipe(space)
     Recipe.enabled = space.tech == nil
 
     --- Actualizar subgrupo
-    Recipe.subgroup = GMOD.items[space.name].subgroup
+    Recipe.subgroup = GMOD.item[space.name].subgroup
 
     --- Cambiar icono
     Recipe.icons = {
@@ -905,7 +917,7 @@ function This_MOD.create_recipe(space)
                 Name
 
             --- La entidad ya existe
-            if GMOD.entities[Name] then return Name end
+            if GMOD.entity[Name] then return Name end
 
             --- La entidad existirá
             for _, Spaces in pairs(This_MOD.to_be_processed) do
@@ -1038,7 +1050,7 @@ function This_MOD.create_item___compact()
         --- Validación
         --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
-        if GMOD.items[space.name] then return end
+        if GMOD.item[space.name] then return end
 
         --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
@@ -1114,10 +1126,10 @@ function This_MOD.create_item___compact()
 
             --- Renombrar
             local Subgroup = GMOD.subgroups[Item.subgroup]
-            local Order = GMOD.subgroups[space.item.subgroup].order
+            local oldOrder = GMOD.subgroups[space.item.subgroup].order or ""
 
             --- Actualizar el order
-            Subgroup.order = 8 .. Order:sub(2)
+            Subgroup.order = "z-z-z-y-" .. oldOrder
         end
 
         --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
@@ -1267,11 +1279,11 @@ function This_MOD.create_recipe___compact()
 
             --- Renombrar
             local Subgroup = GMOD.subgroups[Recipe.subgroup]
-            local Order = GMOD.subgroups[space.item.subgroup].order
-            local Index = category == This_MOD.category_undo and 7 or 9
+            local oldOrder = GMOD.subgroups[space.item.subgroup].order or space.item.name
+            local Index = category == This_MOD.category_undo and "x-" or "z-"
 
             --- Actualizar el order
-            Subgroup.order = Index .. Order:sub(2)
+            Subgroup.order = "z-z-z-" .. Index .. oldOrder
         end
 
         --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
@@ -1318,7 +1330,7 @@ function This_MOD.create_tech___compact()
         --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
         --- El objeto no ha sido credo
-        if not GMOD.items[space.item_name] then return end
+        if not GMOD.item[space.item_name] then return end
 
         --- Buscar el mineral
         local Resource = This_MOD.resource[space.item.name]
